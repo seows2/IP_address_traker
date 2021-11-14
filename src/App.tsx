@@ -1,5 +1,6 @@
 import React from 'react';
-import Title from './Components/Title';
+import Hello from './Components/Hello';
+import World from './Components/World';
 import { BrowserRouter, Route, Switch } from './core/Router';
 
 function App() {
@@ -7,10 +8,10 @@ function App() {
     <BrowserRouter>
       <Switch>
         <Route path="/hello" exact>
-          <Title>안녕!</Title>
+          <Hello>안녕!</Hello>
         </Route>
         <Route path="/world" exact>
-          <Title>세상!</Title>
+          <World>세상!</World>
         </Route>
       </Switch>
     </BrowserRouter>

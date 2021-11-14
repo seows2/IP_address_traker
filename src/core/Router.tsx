@@ -1,4 +1,4 @@
-import React, { Component, createContext, useContext } from 'react';
+import React, { Component, createContext, useContext, useEffect } from 'react';
 import useLocation from '../hooks/useLocation';
 
 interface RoutercontextType {
@@ -14,7 +14,25 @@ const RouterContext = createContext<RoutercontextType>({
 const BrowserRouter: React.FC<{
   children?: JSX.Element | JSX.Element[];
 }> = ({ children }) => {
-  return <div>{children}</div>;
+  const [location, setLocation] = useLocation();
+
+  const ctx = {
+    location,
+    push: setLocation,
+  };
+
+  const handleLocationChange = () => {
+    setLocation(window.location.pathname);
+  };
+
+  useEffect(() => {
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  });
+
+  return (
+    <RouterContext.Provider value={ctx}>{children}</RouterContext.Provider>
+  );
 };
 
 class Route extends Component<{
@@ -28,10 +46,18 @@ class Route extends Component<{
 }
 
 const Switch: React.FC<{ children: JSX.Element[] }> = ({ children }) => {
-  const [location, setLocation] = useLocation();
-  const acc = children.filter((route) => route.props.path === location);
+  const routerCtx = useContext(RouterContext);
+  const acc = children.filter(
+    (route) => route.props.path === routerCtx.location,
+  );
 
   return acc[0];
 };
 
-export { BrowserRouter, Route, Switch };
+const useRouter = () => {
+  const routerCtx = useContext(RouterContext);
+
+  return [routerCtx.location, routerCtx.push] as const;
+};
+
+export { BrowserRouter, Route, Switch, useRouter as useLocation };
