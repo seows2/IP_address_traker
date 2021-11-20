@@ -7,10 +7,13 @@ function App() {
   return (
     <BrowserRouter>
       <Switch>
-        <Route path="/hello" exact>
+        <Route exact path="/hello">
           <LinkedHello />
         </Route>
-        <Route path="/world" exact>
+        <Route path="/hello/:name/:number">
+          <LinkedHello />
+        </Route>
+        <Route exact path="/world">
           <World />
         </Route>
       </Switch>

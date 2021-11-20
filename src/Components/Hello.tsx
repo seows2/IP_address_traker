@@ -1,11 +1,17 @@
 import React from 'react';
-import { Link, useHistory } from '../core/Router';
+import { Link, useHistory, useParams } from '../core/Router';
 
 const LinkedHello: React.FC = () => {
   const history = useHistory();
-  console.log(history.location.state);
+  const params = useParams();
+  console.log(params);
 
-  return <Link to="/world">World로 이동</Link>;
+  return (
+    <>
+      <div>{params?.name}</div>
+      <Link to="/world">World로 이동</Link>
+    </>
+  );
 };
 
 export default LinkedHello;
