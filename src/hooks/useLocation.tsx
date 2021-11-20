@@ -1,12 +1,12 @@
 import { useState } from 'react';
+import { RouterLocation } from '../core/Router';
 
 function useLocation() {
-  const { pathname } = window.location;
-  const [location, setLocation] = useState(pathname);
+  const [location, setLocation] = useState(window.location);
 
-  const setLocationWrapper = (newLocation: string) => {
-    window.history.pushState({}, '/', newLocation);
-    setLocation(newLocation);
+  const setLocationWrapper = (newLocation: Partial<RouterLocation>) => {
+    window.history.pushState({}, '/', newLocation.pathname);
+    setLocation({ ...location, ...newLocation });
   };
 
   return [location, setLocationWrapper] as const;

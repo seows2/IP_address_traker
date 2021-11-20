@@ -1,23 +1,8 @@
 import React from 'react';
-import styled from 'styled-components';
-import { useLocation } from '../core/Router';
+import { Link } from '../core/Router';
 
-const Title = styled.div`
-  color: skyblue;
-`;
-
-const Hello: React.FC = () => {
-  const [location, setLocation] = useLocation();
-
-  return (
-    <Title
-      onClick={() => {
-        setLocation('/world');
-      }}
-    >
-      안녕안녕
-    </Title>
-  );
+const LinkedHello: React.FC = () => {
+  return <Link to="/world">World로 이동</Link>;
 };
 
-export default Hello;
+export default LinkedHello;

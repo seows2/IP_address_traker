@@ -1,14 +1,25 @@
 import React, { Component, createContext, useContext, useEffect } from 'react';
 import useLocation from '../hooks/useLocation';
+import styled from 'styled-components';
 
-interface RoutercontextType {
-  location: string;
-  push: (location: string) => void;
+interface RouterLocation {
+  pathname: string;
+  hash: string;
+  search: string;
 }
 
-const RouterContext = createContext<RoutercontextType>({
-  location: '',
-  push: (location: string) => {},
+interface RouterContextType {
+  location: RouterLocation;
+  push: (location: Partial<RouterLocation>) => void;
+}
+
+const RouterContext = createContext<RouterContextType>({
+  location: {
+    pathname: '/dummy_path',
+    hash: '#dummy',
+    search: '?some=search_string',
+  },
+  push: (location: Partial<RouterLocation>) => {},
 });
 
 const BrowserRouter: React.FC<{
@@ -22,7 +33,8 @@ const BrowserRouter: React.FC<{
   };
 
   const handleLocationChange = () => {
-    setLocation(window.location.pathname);
+    const { pathname, hash, search } = window.location;
+    setLocation({ pathname, hash, search });
   };
 
   useEffect(() => {
@@ -47,9 +59,11 @@ class Route extends Component<{
 
 const Switch: React.FC<{ children: JSX.Element[] }> = ({ children }) => {
   const routerCtx = useContext(RouterContext);
-  const acc = children.filter(
-    (route) => route.props.path === routerCtx.location,
-  );
+  const acc = children.filter((route) => {
+    // [TODO]: route.props.exact가 true 일 때 구분 기능
+    if (route.props.path === routerCtx.location.pathname) return true;
+    return false;
+  });
 
   return acc[0];
 };
@@ -57,7 +71,48 @@ const Switch: React.FC<{ children: JSX.Element[] }> = ({ children }) => {
 const useRouter = () => {
   const routerCtx = useContext(RouterContext);
 
-  return [routerCtx.location, routerCtx.push] as const;
+  return routerCtx.location;
 };
 
-export { BrowserRouter, Route, Switch, useRouter as useLocation };
+const useHistory = () => {
+  const routerCtx = useContext(RouterContext);
+
+  return {
+    location: routerCtx.location,
+    push: (pathname: string) => {
+      routerCtx.push({ pathname });
+    },
+  } as const;
+};
+
+const StyledLink = styled.a`
+  cursor: pointer;
+`;
+
+const Link: React.FC<{ to: string; children: React.ReactNode }> = ({
+  to,
+  children,
+}) => {
+  const { push } = useHistory();
+  return (
+    <StyledLink
+      href={to}
+      onClick={(event) => {
+        event.preventDefault();
+        push(to);
+      }}
+    >
+      {children}
+    </StyledLink>
+  );
+};
+
+export {
+  BrowserRouter,
+  Route,
+  Link,
+  useHistory,
+  Switch,
+  useRouter as useLocation,
+};
+export type { RouterLocation };
