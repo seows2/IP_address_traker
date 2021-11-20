@@ -1,4 +1,3 @@
-import React from 'react';
 import LinkedHello from './Components/Hello';
 import World from './Components/World';
 import { BrowserRouter, Route, Switch } from './core/Router';
