@@ -4,7 +4,6 @@ import { Link, useHistory, useParams } from '../core/Router';
 const LinkedHello: React.FC = () => {
   const history = useHistory();
   const params = useParams();
-  console.log(params);
 
   return (
     <>

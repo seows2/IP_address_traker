@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import useBrowserLocation from '../hooks/useBrowserLocation';
 import styled from 'styled-components';
 
 interface RouterLocation {
