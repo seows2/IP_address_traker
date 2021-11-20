@@ -7,15 +7,18 @@ const Title = styled.div`
 `;
 
 const World: React.FC = () => {
-  const { location, push } = useHistory();
+  const { location, push, goBack } = useHistory();
   return (
-    <Title
-      onClick={() => {
-        push('/hello', { message: 'hi' });
-      }}
-    >
-      월드월드~
-    </Title>
+    <>
+      <Title
+        onClick={() => {
+          push('/hello/seows/123', { message: 'hi' });
+        }}
+      >
+        월드월드~
+      </Title>
+      <div onClick={() => goBack()}>1231231</div>
+    </>
   );
 };
 
