@@ -1,5 +1,5 @@
 import React, { Component, createContext, useContext, useEffect } from 'react';
-import useLocation from '../hooks/useLocation';
+import useBrowserLocation from '../hooks/useBrowserLocation';
 import styled from 'styled-components';
 
 interface RouterLocation {
@@ -23,13 +23,16 @@ const RouterContext = createContext<RouterContextType>({
 });
 
 const BrowserRouter: React.FC<{
-  children?: React.ReactChild;
+  children?: React.ReactNode;
 }> = ({ children }) => {
-  const [location, setLocation] = useLocation();
+  const [location, setLocation] = useBrowserLocation();
 
   const ctx = {
     location,
-    push: setLocation,
+    push: (newLocation: Partial<RouterLocation>) => {
+      window.history.pushState({}, '', newLocation.pathname);
+      setLocation(newLocation);
+    },
   };
 
   const handleLocationChange = () => {
@@ -68,12 +71,44 @@ const Switch: React.FC<{ children: JSX.Element[] }> = ({ children }) => {
   return acc[0];
 };
 
-const useRouter = () => {
+/**
+ * useLocation hook은 현재 URL을 나타내는 위치를 반환.
+ * URL이 변경될 때마다 새 위치를 반환하는 useState와 같음
+ * @returns {
+ *  pathname: "/path/to",
+ *  search: "?search=SeoWS",
+ *  hash: "#hashTo",
+ * }
+ *
+ * @example
+ * const location = useLocation();
+ * console.log(location.search)
+ */
+const useLocation = () => {
   const routerCtx = useContext(RouterContext);
 
   return routerCtx.location;
 };
 
+/**
+ * history 객체를 반환합니다.
+ * @returns {
+ *  location: {
+ *    pathname: "/path/to",
+ *    search: "?search=SeoWS",
+ *    hash: "#hashTo"
+ *  },
+ *  push: Fuction,
+ * }
+ *
+ * @example
+ * const history = useHistory();
+ * history.push("/main");
+ *
+ * @example
+ * const history = useHistory();
+ * console.log(history.pathname);
+ */
 const useHistory = () => {
   const routerCtx = useContext(RouterContext);
 
@@ -107,12 +142,5 @@ const Link: React.FC<{ to: string; children: React.ReactNode }> = ({
   );
 };
 
-export {
-  BrowserRouter,
-  Route,
-  Link,
-  useHistory,
-  Switch,
-  useRouter as useLocation,
-};
+export { BrowserRouter, Route, Link, useHistory, Switch, useLocation };
 export type { RouterLocation };
