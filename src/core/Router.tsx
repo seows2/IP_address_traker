@@ -36,9 +36,11 @@ const RouterContext = createContext<RouterContextType>({
 const BrowserRouter: React.FC<{
   children?: React.ReactNode;
 }> = ({ children }) => {
-  const [windowLocation, setWindowLocation] = useState<RouterLocation>(
-    window.location,
-  );
+  const [windowLocation, setWindowLocation] = useState<RouterLocation>({
+    hash: window.location.hash,
+    pathname: window.location.pathname,
+    search: window.location.search,
+  });
 
   const ctx = {
     location: windowLocation,
