@@ -3,6 +3,7 @@ import LinkedHello from './Components/Hello';
 import World from './Components/World';
 import { BrowserRouter, Route, Switch } from './core/Router';
 import MainPage from './pages/Main';
+import './styles/app.css';
 
 const Main = styled.main`
   height: 100%;
