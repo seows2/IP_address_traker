@@ -106,7 +106,6 @@ dist
 .parcel-cache/
 
 .vscode/runtime*.js
-lib
 
 # Folder view configuration files
 .DS_Store
