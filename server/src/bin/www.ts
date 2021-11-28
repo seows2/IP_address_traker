@@ -1,4 +1,5 @@
 import http from 'http';
+import { Server, Socket } from 'socket.io';
 import app from '@/app';
 import config from '@/config';
 
@@ -6,6 +7,19 @@ const { port } = config;
 app.set('port', port);
 
 const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+  },
+});
+
+io.on('connection', (socket: Socket) => {
+  socket.on('move', (data: any) => {
+    console.log('[MOVE]', data);
+    io.emit('update-moves', data);
+  });
+  console.log('a user connected');
+});
 
 /**
  * HTTP "error" 이벤트를 위한 리스너
