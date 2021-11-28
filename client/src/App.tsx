@@ -6,7 +6,9 @@ import MainPage from './pages/Main';
 import './styles/app.css';
 
 const Main = styled.main`
+  position: relative;
   height: 100%;
+  width: 1156px;
 `;
 
 function App() {

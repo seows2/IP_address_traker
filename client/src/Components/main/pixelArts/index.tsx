@@ -1,11 +1,12 @@
 import { FC } from 'react';
 import Coord from './coord';
+import './cat/cat.css';
 
-const PixelArts: FC<{
+const PixelArt: FC<{
   coord?: Coord;
-  className: string;
+  className: 'cat';
 }> = ({ coord, className }) => {
-  return <div className={className}>asd</div>;
+  return <div style={{ ...coord }} className={className}></div>;
 };
 
-export default PixelArts;
+export default PixelArt;
