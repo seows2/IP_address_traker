@@ -14,11 +14,18 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket: Socket) => {
+  console.log('a user connected');
   socket.on('move', (data: any) => {
     console.log('[MOVE]', data);
     io.emit('update-moves', data);
   });
-  console.log('a user connected');
+  socket.on('join-room', (userId) => {
+    socket.broadcast.emit('user-connected', userId);
+    console.log(`user-connected! id: ${userId}`);
+    socket.on('disconnect', () => {
+      socket.broadcast.emit('user-disconnected', userId);
+    });
+  });
 });
 
 /**
