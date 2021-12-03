@@ -1,0 +1,58 @@
+.flower {
+  position: absolute;
+  animation: flower 1s infinite;
+  -webkit-animation: flower 1s infinite;
+  -moz-animation: flower 1s infinite;
+  -o-animation: flower 1s infinite;
+}
+
+@keyframes flower {
+  0%,
+  50% {
+    box-shadow: 25px 5px 0 0 rgba(233, 30, 99, 1),
+      30px 5px 0 0 rgba(255, 87, 34, 1), 35px 5px 0 0 rgba(233, 30, 99, 1),
+      20px 10px 0 0 rgba(233, 30, 99, 1), 25px 10px 0 0 rgba(255, 87, 34, 1),
+      30px 10px 0 0 rgba(255, 87, 34, 1), 35px 10px 0 0 rgba(255, 87, 34, 1),
+      40px 10px 0 0 rgba(233, 30, 99, 1), 20px 15px 0 0 rgba(255, 87, 34, 1),
+      25px 15px 0 0 rgba(255, 87, 34, 1), 30px 15px 0 0 rgba(255, 235, 59, 1),
+      35px 15px 0 0 rgba(255, 87, 34, 1), 40px 15px 0 0 rgba(255, 87, 34, 1),
+      20px 20px 0 0 rgba(233, 30, 99, 1), 25px 20px 0 0 rgba(255, 87, 34, 1),
+      30px 20px 0 0 rgba(255, 87, 34, 1), 35px 20px 0 0 rgba(255, 87, 34, 1),
+      40px 20px 0 0 rgba(233, 30, 99, 1), 25px 25px 0 0 rgba(233, 30, 99, 1),
+      30px 25px 0 0 rgba(139, 195, 74, 1), 35px 25px 0 0 rgba(233, 30, 99, 1),
+      30px 30px 0 0 rgba(139, 195, 74, 1), 40px 30px 0 0 rgba(233, 30, 99, 1),
+      45px 30px 0 0 rgba(139, 195, 74, 1), 15px 35px 0 0 rgba(233, 30, 99, 1),
+      20px 35px 0 0 rgba(139, 195, 74, 1), 30px 35px 0 0 rgba(139, 195, 74, 1),
+      40px 35px 0 0 rgba(139, 195, 74, 1), 45px 35px 0 0 rgba(139, 195, 74, 1),
+      15px 40px 0 0 rgba(139, 195, 74, 1), 20px 40px 0 0 rgba(139, 195, 74, 1),
+      30px 40px 0 0 rgba(139, 195, 74, 1), 35px 40px 0 0 rgba(139, 195, 74, 1),
+      25px 45px 0 0 rgba(139, 195, 74, 1), 30px 45px 0 0 rgba(139, 195, 74, 1),
+      30px 50px 0 0 rgba(139, 195, 74, 1);
+    height: 5px;
+    width: 5px;
+  }
+  50.01%,
+  100% {
+    box-shadow: 20px 5px 0 0 rgba(233, 30, 99, 1),
+      25px 5px 0 0 rgba(255, 87, 34, 1), 30px 5px 0 0 rgba(233, 30, 99, 1),
+      15px 10px 0 0 rgba(233, 30, 99, 1), 20px 10px 0 0 rgba(255, 87, 34, 1),
+      25px 10px 0 0 rgba(255, 87, 34, 1), 30px 10px 0 0 rgba(255, 87, 34, 1),
+      35px 10px 0 0 rgba(233, 30, 99, 1), 15px 15px 0 0 rgba(255, 87, 34, 1),
+      20px 15px 0 0 rgba(255, 87, 34, 1), 25px 15px 0 0 rgba(255, 235, 59, 1),
+      30px 15px 0 0 rgba(255, 87, 34, 1), 35px 15px 0 0 rgba(255, 87, 34, 1),
+      15px 20px 0 0 rgba(233, 30, 99, 1), 20px 20px 0 0 rgba(255, 87, 34, 1),
+      25px 20px 0 0 rgba(255, 87, 34, 1), 30px 20px 0 0 rgba(255, 87, 34, 1),
+      35px 20px 0 0 rgba(233, 30, 99, 1), 20px 25px 0 0 rgba(233, 30, 99, 1),
+      25px 25px 0 0 rgba(139, 195, 74, 1), 30px 25px 0 0 rgba(233, 30, 99, 1),
+      25px 30px 0 0 rgba(139, 195, 74, 1), 35px 30px 0 0 rgba(139, 195, 74, 1),
+      40px 30px 0 0 rgba(233, 30, 99, 1), 10px 35px 0 0 rgba(233, 30, 99, 1),
+      15px 35px 0 0 rgba(139, 195, 74, 1), 25px 35px 0 0 rgba(139, 195, 74, 1),
+      35px 35px 0 0 rgba(139, 195, 74, 1), 40px 35px 0 0 rgba(139, 195, 74, 1),
+      10px 40px 0 0 rgba(139, 195, 74, 1), 15px 40px 0 0 rgba(139, 195, 74, 1),
+      25px 40px 0 0 rgba(139, 195, 74, 1), 30px 40px 0 0 rgba(139, 195, 74, 1),
+      20px 45px 0 0 rgba(139, 195, 74, 1), 25px 45px 0 0 rgba(139, 195, 74, 1),
+      25px 50px 0 0 rgba(139, 195, 74, 1);
+    height: 5px;
+    width: 5px;
+  }
+}
