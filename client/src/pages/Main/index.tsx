@@ -1,14 +1,18 @@
 import { Component, createRef, RefObject } from 'react';
-import { MediaConnection } from 'peerjs';
+import Peer, { DataConnection, MediaConnection } from 'peerjs';
 import { Book, Gift, House, KK, Tree } from '../../components/main/IconButtons';
 import PixelArt from '../../components/main/Minimi';
 import socket from '../../lib/api/socket';
 import { MainContainer } from './index.style';
-import peer from '../../lib/api/peer';
+import { v4 as uuidv4 } from 'uuid';
+import createPeer from '../../lib/api/peer';
+import { delay } from '../../utils/protocol';
 
 interface MainState {
+  myId: string;
   users?: { id: string; x: number; y: number }[];
-  peers: Record<string, MediaConnection>;
+  peerCalls: Record<string, MediaConnection>;
+  connections: Record<string, DataConnection>;
   x: number;
   y: number;
 }
@@ -16,26 +20,70 @@ interface MainState {
 const [DX, DY] = [2, 2];
 
 class Main extends Component<{ u?: string }, MainState> {
-  myVideoRef: RefObject<HTMLVideoElement>;
-
   audioGridRef: RefObject<HTMLDivElement>;
-
-  videoGridRef: RefObject<HTMLDivElement>;
+  peer: Peer;
+  myId: string;
 
   constructor(props) {
     super(props);
     this.state = {
-      peers: {},
+      peerCalls: {},
+      connections: {},
+      myId: '',
       x: 5,
       y: 5,
     };
-    console.log(this.state);
+    this.myId = uuidv4();
+    this.peer = createPeer(this.myId);
     this.audioGridRef = createRef<HTMLDivElement>();
-    this.myVideoRef = createRef<HTMLVideoElement>();
-    this.videoGridRef = createRef<HTMLDivElement>();
   }
 
   componentDidMount() {
+    this.setupAudioStream();
+    this.peer.on('open', (id) => {
+      socket.emit('join-room', id);
+    });
+
+    socket.on('user-connected', async (userId: string) => {
+      console.log('user-connected! ID: ', userId);
+      const conn = this.peer.connect(userId, { reliable: true });
+      // const { myId } = this.state;
+
+      await delay(2000);
+      conn.send({ message: 'hello', from: this.myId });
+    });
+
+    this.peer.on('connection', (con) => {
+      con.on('data', (data) => {
+        console.log('received data', data);
+        this.addConnections(data.from, con);
+      });
+    });
+
+    socket.on('user-disconnected', (userId) => {
+      console.log(`user-disconnected: ${userId}`);
+    });
+
+    document.body.addEventListener('keydown', this.onKeyDown);
+  }
+
+  componentWillUnmount() {
+    document.body.removeEventListener('keydown', this.onKeyDown);
+  }
+
+  addConnections = (id: string, connection: DataConnection) => {
+    const { connections } = this.state;
+    const nextConnections = {
+      ...connections,
+      [id]: connection,
+    };
+    this.setState({ connections: nextConnections }, () => {
+      console.log('myId', this.myId);
+      console.log(this.state);
+    });
+  };
+
+  setupAudioStream = () => {
     navigator.mediaDevices
       .getUserMedia({
         // video: true,
@@ -45,7 +93,7 @@ class Main extends Component<{ u?: string }, MainState> {
         /**
          * 누군가가 나할테 call을 했을 때.
          */
-        peer.on('call', (call) => {
+        this.peer.on('call', (call) => {
           call.answer(myStream);
 
           const newAudio = document.createElement('audio');
@@ -57,8 +105,7 @@ class Main extends Component<{ u?: string }, MainState> {
         });
 
         socket.on('user-connected', (userId) => {
-          console.log('user-connected! ID: ', userId);
-          const call = peer.call(userId, myStream);
+          const call = this.peer.call(userId, myStream);
           const newAudio = document.createElement('audio');
           this.audioGridRef.current?.appendChild(newAudio);
 
@@ -70,31 +117,15 @@ class Main extends Component<{ u?: string }, MainState> {
             newAudio.remove();
           });
 
-          const { peers } = this.state;
+          const { peerCalls: peers } = this.state;
           const nextPeers = {
             ...peers,
-            userId: call,
+            [userId]: call,
           };
-          this.setState({ peers: nextPeers });
+          this.setState({ peerCalls: nextPeers });
         });
       });
-
-    peer.on('open', (id) => {
-      socket.emit('join-room', id);
-    });
-
-    socket.on('user-disconnected', (userId) => {
-      console.log(`user-disconnected: ${userId}`);
-      const { peers } = this.state;
-      peers[userId]?.close();
-    });
-
-    document.body.addEventListener('keydown', this.onKeyDown);
-  }
-
-  componentWillUnmount() {
-    document.body.removeEventListener('keydown', this.onKeyDown);
-  }
+  };
 
   addAudioStream = (audio: HTMLAudioElement, stream: MediaStream) => {
     audio.srcObject = stream;
