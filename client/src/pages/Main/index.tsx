@@ -7,6 +7,7 @@ import { MainContainer } from './index.style';
 import { v4 as uuidv4 } from 'uuid';
 import createPeer from '../../lib/api/peer';
 import { delay } from '../../utils/protocol';
+import { alert } from '../../utils/modal';
 
 interface MainState {
   myId: string;
@@ -21,6 +22,7 @@ const [DX, DY] = [2, 2];
 
 class Main extends Component<{ u?: string }, MainState> {
   audioGridRef: RefObject<HTMLDivElement>;
+  myStream?: MediaStream;
   peer: Peer;
   myId: string;
 
@@ -35,39 +37,19 @@ class Main extends Component<{ u?: string }, MainState> {
     };
     this.myId = uuidv4();
     this.peer = createPeer(this.myId);
-    this.audioGridRef = createRef<HTMLDivElement>();
-  }
-
-  componentDidMount() {
-    this.setupAudioStream();
     this.peer.on('open', (id) => {
       socket.emit('join-room', id);
     });
-
-    socket.on('user-connected', async (userId: string) => {
-      console.log('user-connected! ID: ', userId);
-      const conn = this.peer.connect(userId, { reliable: true });
-      // const { myId } = this.state;
-
-      await delay(2000);
-      conn.send({ message: 'hello', from: this.myId });
-    });
-
-    this.peer.on('connection', (con) => {
-      con.on('data', (data) => {
-        console.log('received data', data);
-        this.addConnections(data.from, con);
-      });
-    });
-
-    socket.on('user-disconnected', (userId) => {
-      console.log(`user-disconnected: ${userId}`);
-    });
-
-    document.body.addEventListener('keydown', this.onKeyDown);
+    this.audioGridRef = createRef<HTMLDivElement>();
+    this.setupConnections();
   }
 
+  componentDidMount() {}
+
   componentWillUnmount() {
+    this.myStream?.getTracks().forEach((mediaTrack) => {
+      mediaTrack.stop();
+    });
     document.body.removeEventListener('keydown', this.onKeyDown);
   }
 
@@ -83,6 +65,34 @@ class Main extends Component<{ u?: string }, MainState> {
     });
   };
 
+  setupConnections() {
+    this.setupAudioStream();
+    socket.on('user-connected', async (userId: string) => {
+      alert(`user-connected! ID: ${userId}`);
+      const conn = this.peer.connect(userId, { reliable: true });
+      // const { myId } = this.state;
+
+      await delay(2000);
+      conn.send({ message: 'hello', from: this.myId });
+      this.addConnections(userId, conn);
+    });
+
+    this.peer.on('connection', (con) => {
+      con.on('data', (data) => {
+        console.log('received data', data);
+        con.send({ message: 'reply!' });
+      });
+    });
+
+    socket.on('user-disconnected', (userId) => {
+      console.log(`user-disconnected: ${userId}`);
+      const { peerCalls } = this.state;
+      peerCalls[userId]?.close();
+    });
+
+    document.body.addEventListener('keydown', this.onKeyDown);
+  }
+
   setupAudioStream = () => {
     navigator.mediaDevices
       .getUserMedia({
@@ -90,6 +100,7 @@ class Main extends Component<{ u?: string }, MainState> {
         audio: true,
       })
       .then((myStream) => {
+        this.myStream = myStream;
         /**
          * 누군가가 나할테 call을 했을 때.
          */
@@ -117,9 +128,9 @@ class Main extends Component<{ u?: string }, MainState> {
             newAudio.remove();
           });
 
-          const { peerCalls: peers } = this.state;
+          const { peerCalls } = this.state;
           const nextPeers = {
-            ...peers,
+            ...peerCalls,
             [userId]: call,
           };
           this.setState({ peerCalls: nextPeers });
