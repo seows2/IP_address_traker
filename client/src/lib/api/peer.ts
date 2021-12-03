@@ -1,8 +1,9 @@
 import Peer from 'peerjs';
 
-const peer = new Peer('someid', {
+const peer = new Peer(undefined, {
   host: 'localhost',
-  port: 5000,
+  path: '/p2p',
+  port: 5001,
 });
 
 export default peer;

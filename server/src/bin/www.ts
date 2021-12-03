@@ -1,12 +1,13 @@
-import http from 'http';
+import https from 'https';
 import { Server, Socket } from 'socket.io';
 import app from '@/app';
 import config from '@/config';
+import { cert, key } from '@/config/pem_config';
 
 const { port } = config;
 app.set('port', port);
 
-const server = http.createServer(app);
+const server = https.createServer({ cert, key }, app);
 const io = new Server(server, {
   cors: {
     origin: '*',

@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "env-cmd -f .env.dev nodemon --exec ts-node -r tsconfig-paths/register ./src/bin/www.ts --watch ./src -e ts",
-    "start": "env-cmd ts-node -r tsconfig-paths/register ./src/bin/www.ts"
+    "start": "env-cmd ts-node -r tsconfig-paths/register ./src/bin/www.ts",
+    "p2p": "npx peer --port 5001 --key peerjs --path /p2p --proxied true --sslkey src/config/localhost.pem --sslcert src/config/localhost.crt"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",

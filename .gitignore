@@ -122,3 +122,7 @@ Thumbs.db
 # Application specific files
 .sass-cache
 .vscode
+
+# cert
+localhost.crt
+localhost.pem
