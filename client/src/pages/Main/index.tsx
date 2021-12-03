@@ -14,6 +14,8 @@ interface MainState {
 class Main extends Component<{ u?: string }, MainState> {
   myVideoRef: RefObject<HTMLVideoElement>;
 
+  audioGridRef: RefObject<HTMLDivElement>;
+
   videoGridRef: RefObject<HTMLDivElement>;
 
   constructor(props) {
@@ -23,6 +25,7 @@ class Main extends Component<{ u?: string }, MainState> {
       peers: {},
     };
     console.log(this.state);
+    this.audioGridRef = createRef<HTMLDivElement>();
     this.myVideoRef = createRef<HTMLVideoElement>();
     this.videoGridRef = createRef<HTMLDivElement>();
   }
@@ -30,43 +33,38 @@ class Main extends Component<{ u?: string }, MainState> {
   componentDidMount() {
     navigator.mediaDevices
       .getUserMedia({
-        video: true,
+        // video: true,
         audio: true,
       })
       .then((myStream) => {
-        this.addVideoStream(this.myVideoRef.current!, myStream);
-        this.myVideoRef.current!.muted = true;
-
+        /**
+         * 누군가가 나할테 call을 했을 때.
+         */
         peer.on('call', (call) => {
           call.answer(myStream);
 
-          const newVideo = document.createElement('video');
-          newVideo.width = 300;
-          newVideo.height = 200;
-          this.videoGridRef.current!.appendChild(newVideo);
+          const newAudio = document.createElement('audio');
+          this.audioGridRef.current?.appendChild(newAudio);
           call.on('stream', (otherUserStream) => {
-            this.addVideoStream(newVideo, otherUserStream);
+            this.addAudioStream(newAudio, otherUserStream);
           });
-          call.on('close', () => {
-            console.log('close');
-            newVideo.remove();
-          });
+          console.log('peer ', call.peer);
         });
 
         socket.on('user-connected', (userId) => {
           console.log('user-connected! ID: ', userId);
           const call = peer.call(userId, myStream);
-          const newVideo = document.createElement('video');
-          newVideo.width = 300;
-          newVideo.height = 200;
-          newVideo.id = userId;
-          this.videoGridRef.current!.appendChild(newVideo);
+          const newAudio = document.createElement('audio');
+          this.audioGridRef.current?.appendChild(newAudio);
+
           call.on('stream', (otherUserStream) => {
-            this.addVideoStream(newVideo, otherUserStream);
+            this.addAudioStream(newAudio, otherUserStream);
           });
+
           call.on('close', () => {
-            newVideo.remove();
+            newAudio.remove();
           });
+
           const { peers } = this.state;
           const nextPeers = {
             ...peers,
@@ -75,6 +73,7 @@ class Main extends Component<{ u?: string }, MainState> {
           this.setState({ peers: nextPeers });
         });
       });
+
     peer.on('open', (id) => {
       socket.emit('join-room', id);
     });
@@ -86,10 +85,10 @@ class Main extends Component<{ u?: string }, MainState> {
     });
   }
 
-  addVideoStream = (video: HTMLVideoElement, stream: MediaStream) => {
-    video.srcObject = stream;
-    video.addEventListener('loadedmetadata', () => {
-      video.play();
+  addAudioStream = (audio: HTMLAudioElement, stream: MediaStream) => {
+    audio.srcObject = stream;
+    audio.addEventListener('loadedmetadata', () => {
+      audio.play();
     });
   };
 
@@ -97,16 +96,7 @@ class Main extends Component<{ u?: string }, MainState> {
     const { users } = this.state;
     return (
       <MainContainer>
-        <div className="video-grid" ref={this.videoGridRef}>
-          <video width="300" height="200" ref={this.myVideoRef}>
-            <track kind="captions" />
-          </video>
-          {users.map((val) => (
-            <video key={val.id} width="300" height="200" ref={val.videoRef}>
-              <track kind="captions" />
-            </video>
-          ))}
-        </div>
+        <div className="audio-gred" ref={this.audioGridRef} />
         <PixelArt className="cat" />
         <House />
         <KK />
