@@ -19,6 +19,7 @@
     "socket.io-client": "^4.4.0",
     "styled-components": "^5.3.3",
     "typescript": "^4.1.2",
+    "uuid": "^8.3.2",
     "web-vitals": "^1.0.1"
   },
   "scripts": {
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@types/socket.io-client": "^3.0.0",
+    "@types/uuid": "^8.3.3",
     "env-cmd": "^10.1.0",
     "eslint": "^7.32.0",
     "eslint-config-airbnb": "^18.2.1",
