@@ -1,15 +1,19 @@
 import { Component, createRef, RefObject } from 'react';
 import { MediaConnection } from 'peerjs';
 import { Book, Gift, House, KK, Tree } from '../../components/main/IconButtons';
-import PixelArt from '../../components/main/pixelArts';
+import PixelArt from '../../components/main/Minimi';
 import socket from '../../lib/api/socket';
 import { MainContainer } from './index.style';
 import peer from '../../lib/api/peer';
 
 interface MainState {
-  users: { id: string; videoRef?: RefObject<HTMLVideoElement> }[];
+  users?: { id: string; x: number; y: number }[];
   peers: Record<string, MediaConnection>;
+  x: number;
+  y: number;
 }
+
+const [DX, DY] = [2, 2];
 
 class Main extends Component<{ u?: string }, MainState> {
   myVideoRef: RefObject<HTMLVideoElement>;
@@ -21,8 +25,9 @@ class Main extends Component<{ u?: string }, MainState> {
   constructor(props) {
     super(props);
     this.state = {
-      users: [],
       peers: {},
+      x: 5,
+      y: 5,
     };
     console.log(this.state);
     this.audioGridRef = createRef<HTMLDivElement>();
@@ -83,6 +88,12 @@ class Main extends Component<{ u?: string }, MainState> {
       const { peers } = this.state;
       peers[userId]?.close();
     });
+
+    document.body.addEventListener('keydown', this.onKeyDown);
+  }
+
+  componentWillUnmount() {
+    document.body.removeEventListener('keydown', this.onKeyDown);
   }
 
   addAudioStream = (audio: HTMLAudioElement, stream: MediaStream) => {
@@ -92,12 +103,37 @@ class Main extends Component<{ u?: string }, MainState> {
     });
   };
 
+  onKeyDown = (event: globalThis.KeyboardEvent) => {
+    const { y, x } = this.state;
+    switch (event.code) {
+      case 'ArrowUp':
+        this.setState({ y: Math.max(0, y - DY) });
+        break;
+      case 'ArrowDown':
+        this.setState({ y: Math.min(90, y + DY) });
+        break;
+      case 'ArrowLeft':
+        this.setState({ x: Math.max(0, x - DX) });
+        break;
+      case 'ArrowRight':
+        this.setState({ x: Math.min(90, x + DX) });
+        break;
+      default:
+        break;
+    }
+  };
+
   render() {
-    const { users } = this.state;
+    const { y, x } = this.state;
     return (
       <MainContainer>
         <div className="audio-gred" ref={this.audioGridRef} />
         <PixelArt className="cat" />
+        <PixelArt className="sonic" coord={{ left: '15%', top: '30%' }} />
+        <PixelArt className="chicken" coord={{ left: `${x}%`, top: `${y}%` }} />
+        <PixelArt className="hedgehog" coord={{ right: '10%' }} />
+        <PixelArt className="flower" coord={{ bottom: '20%' }} />
+        <PixelArt className="ladybug" coord={{ bottom: '20%', right: '40%' }} />
         <House />
         <KK />
         <Tree />
@@ -107,58 +143,5 @@ class Main extends Component<{ u?: string }, MainState> {
     );
   }
 }
-/* 
-const Main: FC = () => {
-  const [x, setX] = useState(0);
-  const [y, setY] = useState(0);
-
-  const handleKeyDown = useCallback(
-    (event: globalThis.KeyboardEvent) => {
-      switch (event.code) {
-        case 'ArrowUp':
-          setY(Math.max(0, y - 1));
-          break;
-        case 'ArrowDown':
-          setY(Math.min(90, y + 1));
-          break;
-        case 'ArrowLeft':
-          setX(Math.max(0, x - 1));
-          break;
-        case 'ArrowRight':
-          setX(Math.min(90, x + 1));
-          break;
-        default:
-          break;
-      }
-      socket.emit('move', { op: JSON.stringify({ y, x }) });
-    },
-    [x, y],
-  );
-
-  useEffect(() => {
-    socket.on('update-moves', ({ op }: { op: string }) => {
-      console.log(op);
-    });
-  });
-
-  useEffect(() => {
-    document.body.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.body.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleKeyDown]);
-
-  return (
-    <MainContainer>
-      <PixelArt className="cat" coord={{ left: `${x}%`, top: `${y}%` }} />
-      <House />
-      <KK />
-      <Tree />
-      <Gift />
-      <Book />
-    </MainContainer>
-  );
-}; */
 
 export default Main;
