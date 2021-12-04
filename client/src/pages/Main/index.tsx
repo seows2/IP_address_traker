@@ -12,7 +12,6 @@ import createPeer from '../../lib/api/peer';
 import { alert } from '../../utils/modal';
 
 interface MainState {
-  myId: string;
   users: { id: string; x: number; y: number; minimi: Minimi }[];
   peerCalls: Record<string, MediaConnection>;
   connections: Record<string, DataConnection>;
@@ -30,6 +29,9 @@ type MinimiUpdateMessage = {
 };
 
 const [DX, DY] = [2, 2];
+const delayMS = 250;
+const pleaseAlloweRecord =
+  '음성녹음을 허용해주세요! 다른유저와 채팅할 수 있습니다.';
 
 class Main extends Component<{ u?: string }, MainState> {
   audioGridRef: RefObject<HTMLDivElement>;
@@ -44,7 +46,6 @@ class Main extends Component<{ u?: string }, MainState> {
     this.state = {
       peerCalls: {},
       connections: {},
-      myId: '',
       minimi,
       x,
       y,
@@ -80,7 +81,7 @@ class Main extends Component<{ u?: string }, MainState> {
 
       setTimeout(() => {
         const { minimi, x, y } = this.state;
-        const minimiMessage: MinimiUpdateMessage = {
+        const firstMinimiNotifyMessage: MinimiUpdateMessage = {
           x,
           y,
           from: this.myId,
@@ -89,8 +90,8 @@ class Main extends Component<{ u?: string }, MainState> {
         };
         conn.send({ message: 'hello', from: this.myId });
         this.addConnections(userId, conn);
-        conn.send(minimiMessage);
-      }, 100);
+        conn.send(firstMinimiNotifyMessage);
+      }, delayMS);
     });
 
     this.peer.on('connection', (con) => {
@@ -103,7 +104,7 @@ class Main extends Component<{ u?: string }, MainState> {
           setTimeout(() => {
             conn.send({ message: 'hello2', from: this.myId });
             this.addConnections(con.peer, conn);
-          }, 100);
+          }, delayMS);
         }
       });
     });
@@ -112,6 +113,11 @@ class Main extends Component<{ u?: string }, MainState> {
       alert(`user-disconnected: ${userId}`);
       const { peerCalls } = this.state;
       peerCalls[userId]?.close();
+      delete peerCalls[userId];
+      this.setState({
+        peerCalls,
+        users: this.state.users.filter((user) => user.id !== userId),
+      });
       this.removeConnections(userId);
     });
 
@@ -148,17 +154,14 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   setupAudioStream = () => {
-    navigator.mediaDevices
-      .getUserMedia({
-        // video: true,
-        audio: true,
-      })
-      .then((myStream) => {
-        this.myStream = myStream;
-        /**
-         * 누군가가 나할테 call을 했을 때.
-         */
-        this.peer.on('call', (call) => {
+    /**
+     * 누군가가 나할테 call을 했을 때.
+     */
+    this.peer.on('call', (call) => {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((myStream) => {
+          this.myStream = myStream;
           call.answer(myStream);
 
           const newAudio = document.createElement('audio');
@@ -167,9 +170,17 @@ class Main extends Component<{ u?: string }, MainState> {
             this.addAudioStream(newAudio, otherUserStream);
           });
           console.log('peer ', call.peer);
+        })
+        .catch((_) => {
+          alert(pleaseAlloweRecord, 3000);
         });
+    });
 
-        socket.on('user-connected', (userId) => {
+    socket.on('user-connected', (userId) => {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((myStream) => {
+          this.myStream = myStream;
           const call = this.peer.call(userId, myStream);
           const newAudio = document.createElement('audio');
           this.audioGridRef.current?.appendChild(newAudio);
@@ -188,8 +199,11 @@ class Main extends Component<{ u?: string }, MainState> {
             [userId]: call,
           };
           this.setState({ peerCalls: nextPeers });
+        })
+        .catch((_) => {
+          alert(pleaseAlloweRecord, 3000);
         });
-      });
+    });
   };
 
   addAudioStream = (audio: HTMLAudioElement, stream: MediaStream) => {
