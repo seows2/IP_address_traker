@@ -1,7 +1,10 @@
 import { Component, createRef, RefObject } from 'react';
 import Peer, { DataConnection, MediaConnection } from 'peerjs';
 import { Book, Gift, House, KK, Tree } from '../../components/main/IconButtons';
-import PixelArt from '../../components/main/Minimi';
+import PixelArt, {
+  genRandomPixelArt,
+  Minimi,
+} from '../../components/main/Minimi';
 import socket from '../../lib/api/socket';
 import { MainContainer } from './index.style';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,9 +17,19 @@ interface MainState {
   users?: { id: string; x: number; y: number }[];
   peerCalls: Record<string, MediaConnection>;
   connections: Record<string, DataConnection>;
+  minimi: Minimi;
   x: number;
   y: number;
+  others: { minimi: Minimi; x: number; y: number }[];
 }
+
+type MinimiUpdateMessage = {
+  x: number;
+  y: number;
+  minimi: Minimi;
+  from: string;
+  message: 'updateMinimi';
+};
 
 const [DX, DY] = [2, 2];
 
@@ -28,23 +41,29 @@ class Main extends Component<{ u?: string }, MainState> {
 
   constructor(props) {
     super(props);
+    const { minimi, x, y } = genRandomPixelArt();
+
     this.state = {
       peerCalls: {},
       connections: {},
       myId: '',
-      x: 5,
-      y: 5,
+      minimi,
+      x,
+      y,
+      others: [],
     };
+
     this.myId = uuidv4();
     this.peer = createPeer(this.myId);
     this.peer.on('open', (id) => {
       socket.emit('join-room', id);
     });
     this.audioGridRef = createRef<HTMLDivElement>();
+    this.setupConnections = this.setupConnections.bind(this);
+    this.addConnections = this.addConnections.bind(this);
+    this.addAudioStream = this.addAudioStream.bind(this);
     this.setupConnections();
   }
-
-  componentDidMount() {}
 
   componentWillUnmount() {
     this.myStream?.getTracks().forEach((mediaTrack) => {
@@ -67,10 +86,10 @@ class Main extends Component<{ u?: string }, MainState> {
 
   setupConnections() {
     this.setupAudioStream();
+
     socket.on('user-connected', async (userId: string) => {
       alert(`user-connected! ID: ${userId}`);
       const conn = this.peer.connect(userId, { reliable: true });
-      // const { myId } = this.state;
 
       await delay(2000);
       conn.send({ message: 'hello', from: this.myId });
@@ -79,8 +98,10 @@ class Main extends Component<{ u?: string }, MainState> {
 
     this.peer.on('connection', (con) => {
       con.on('data', (data) => {
+        if (data.message === 'updateMinimi') {
+          const { x, y, from, minimi } = data as MinimiUpdateMessage;
+        }
         console.log('received data', data);
-        con.send({ message: 'reply!' });
       });
     });
 
@@ -145,20 +166,36 @@ class Main extends Component<{ u?: string }, MainState> {
     });
   };
 
+  broadCastMove = () => {
+    const { connections, minimi, x, y } = this.state;
+
+    Object.keys(connections).forEach((targetId) => {
+      const conn = connections[targetId];
+      const minimiUpdateMessage: MinimiUpdateMessage = {
+        x,
+        y,
+        minimi,
+        from: this.myId,
+        message: 'updateMinimi',
+      };
+      conn.send(minimiUpdateMessage);
+    });
+  };
+
   onKeyDown = (event: globalThis.KeyboardEvent) => {
     const { y, x } = this.state;
     switch (event.code) {
       case 'ArrowUp':
-        this.setState({ y: Math.max(0, y - DY) });
+        this.setState({ y: Math.max(0, y - DY) }, this.broadCastMove);
         break;
       case 'ArrowDown':
-        this.setState({ y: Math.min(90, y + DY) });
+        this.setState({ y: Math.min(90, y + DY) }, this.broadCastMove);
         break;
       case 'ArrowLeft':
-        this.setState({ x: Math.max(0, x - DX) });
+        this.setState({ x: Math.max(0, x - DX) }, this.broadCastMove);
         break;
       case 'ArrowRight':
-        this.setState({ x: Math.min(90, x + DX) });
+        this.setState({ x: Math.min(90, x + DX) }, this.broadCastMove);
         break;
       default:
         break;
@@ -166,13 +203,13 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   render() {
-    const { y, x } = this.state;
+    const { minimi, y, x } = this.state;
     return (
       <MainContainer>
         <div className="audio-gred" ref={this.audioGridRef} />
         <PixelArt className="cat" />
         <PixelArt className="sonic" coord={{ left: '15%', top: '30%' }} />
-        <PixelArt className="chicken" coord={{ left: `${x}%`, top: `${y}%` }} />
+        <PixelArt className={minimi} coord={{ left: `${x}%`, top: `${y}%` }} />
         <PixelArt className="hedgehog" coord={{ right: '10%' }} />
         <PixelArt className="flower" coord={{ bottom: '20%' }} />
         <PixelArt className="ladybug" coord={{ bottom: '20%', right: '40%' }} />
