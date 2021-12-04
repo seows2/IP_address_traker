@@ -9,18 +9,16 @@ import socket from '../../lib/api/socket';
 import { MainContainer } from './index.style';
 import { v4 as uuidv4 } from 'uuid';
 import createPeer from '../../lib/api/peer';
-import { delay } from '../../utils/protocol';
 import { alert } from '../../utils/modal';
 
 interface MainState {
   myId: string;
-  users?: { id: string; x: number; y: number }[];
+  users: { id: string; x: number; y: number; minimi: Minimi }[];
   peerCalls: Record<string, MediaConnection>;
   connections: Record<string, DataConnection>;
   minimi: Minimi;
   x: number;
   y: number;
-  others: { minimi: Minimi; x: number; y: number }[];
 }
 
 type MinimiUpdateMessage = {
@@ -50,7 +48,7 @@ class Main extends Component<{ u?: string }, MainState> {
       minimi,
       x,
       y,
-      others: [],
+      users: [],
     };
 
     this.myId = uuidv4();
@@ -62,6 +60,7 @@ class Main extends Component<{ u?: string }, MainState> {
     this.setupConnections = this.setupConnections.bind(this);
     this.addConnections = this.addConnections.bind(this);
     this.addAudioStream = this.addAudioStream.bind(this);
+    this.updateMinimi = this.updateMinimi.bind(this);
     this.setupConnections();
   }
 
@@ -70,6 +69,53 @@ class Main extends Component<{ u?: string }, MainState> {
       mediaTrack.stop();
     });
     document.body.removeEventListener('keydown', this.onKeyDown);
+  }
+
+  setupConnections() {
+    this.setupAudioStream();
+
+    socket.on('user-connected', async (userId: string) => {
+      alert(`user-connected! ID: ${userId}`);
+      const conn = this.peer.connect(userId);
+
+      setTimeout(() => {
+        const { minimi, x, y } = this.state;
+        const minimiMessage: MinimiUpdateMessage = {
+          x,
+          y,
+          from: this.myId,
+          minimi,
+          message: 'updateMinimi',
+        };
+        conn.send({ message: 'hello', from: this.myId });
+        this.addConnections(userId, conn);
+        conn.send(minimiMessage);
+      }, 100);
+    });
+
+    this.peer.on('connection', (con) => {
+      con.on('data', (data) => {
+        if (data.message === 'updateMinimi') {
+          this.updateMinimi(data);
+        } else if (data.message === 'hello') {
+          alert(`new user: ${con.peer}`);
+          const conn = this.peer.connect(con.peer);
+          setTimeout(() => {
+            conn.send({ message: 'hello2', from: this.myId });
+            this.addConnections(con.peer, conn);
+          }, 100);
+        }
+      });
+    });
+
+    socket.on('user-disconnected', (userId) => {
+      alert(`user-disconnected: ${userId}`);
+      const { peerCalls } = this.state;
+      peerCalls[userId]?.close();
+      this.removeConnections(userId);
+    });
+
+    document.body.addEventListener('keydown', this.onKeyDown);
   }
 
   addConnections = (id: string, connection: DataConnection) => {
@@ -84,35 +130,22 @@ class Main extends Component<{ u?: string }, MainState> {
     });
   };
 
-  setupConnections() {
-    this.setupAudioStream();
-
-    socket.on('user-connected', async (userId: string) => {
-      alert(`user-connected! ID: ${userId}`);
-      const conn = this.peer.connect(userId, { reliable: true });
-
-      await delay(2000);
-      conn.send({ message: 'hello', from: this.myId });
-      this.addConnections(userId, conn);
+  removeConnections = (id: string) => {
+    const { connections } = this.state;
+    delete connections[id];
+    this.setState({ connections }, () => {
+      console.log(`deleted id: ${id}`);
+      console.log(this.state.connections);
     });
+  };
 
-    this.peer.on('connection', (con) => {
-      con.on('data', (data) => {
-        if (data.message === 'updateMinimi') {
-          const { x, y, from, minimi } = data as MinimiUpdateMessage;
-        }
-        console.log('received data', data);
-      });
-    });
-
-    socket.on('user-disconnected', (userId) => {
-      console.log(`user-disconnected: ${userId}`);
-      const { peerCalls } = this.state;
-      peerCalls[userId]?.close();
-    });
-
-    document.body.addEventListener('keydown', this.onKeyDown);
-  }
+  updateMinimi = (minimiMessage: MinimiUpdateMessage) => {
+    const { x, y, from, minimi } = minimiMessage;
+    const { users } = this.state;
+    const nextUsers = users.slice().filter((user) => user.id !== from);
+    nextUsers.push({ x, y, minimi, id: from });
+    this.setState({ users: nextUsers });
+  };
 
   setupAudioStream = () => {
     navigator.mediaDevices
@@ -184,6 +217,7 @@ class Main extends Component<{ u?: string }, MainState> {
 
   onKeyDown = (event: globalThis.KeyboardEvent) => {
     const { y, x } = this.state;
+
     switch (event.code) {
       case 'ArrowUp':
         this.setState({ y: Math.max(0, y - DY) }, this.broadCastMove);
@@ -203,16 +237,24 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   render() {
-    const { minimi, y, x } = this.state;
+    const { minimi, y, x, users } = this.state;
     return (
       <MainContainer>
         <div className="audio-gred" ref={this.audioGridRef} />
         <PixelArt className="cat" />
+        <PixelArt className="chicken" coord={{ left: '35%', top: '20%' }} />
         <PixelArt className="sonic" coord={{ left: '15%', top: '30%' }} />
         <PixelArt className={minimi} coord={{ left: `${x}%`, top: `${y}%` }} />
         <PixelArt className="hedgehog" coord={{ right: '10%' }} />
         <PixelArt className="flower" coord={{ bottom: '20%' }} />
         <PixelArt className="ladybug" coord={{ bottom: '20%', right: '40%' }} />
+        {users.map(({ id, y, x, minimi }) => (
+          <PixelArt
+            key={id}
+            className={minimi}
+            coord={{ left: `${x}%`, top: `${y}%` }}
+          />
+        ))}
         <House />
         <KK />
         <Tree />
