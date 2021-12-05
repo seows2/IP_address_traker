@@ -1,6 +1,13 @@
 import { Component, createRef, RefObject } from 'react';
 import Peer, { DataConnection, MediaConnection } from 'peerjs';
-import { Book, Gift, House, KK, Tree } from '../../components/main/IconButtons';
+import {
+  Book,
+  Gift,
+  House,
+  KK,
+  Tree,
+  TypeCategoryIcon,
+} from '../../components/main/IconButtons';
 import PixelArt, {
   genRandomPixelArt,
   Minimi,
@@ -17,6 +24,7 @@ interface MainState {
   peerCalls: Record<string, MediaConnection>;
   connections: Record<string, DataConnection>;
   minimi: Minimi;
+  entered?: TypeCategoryIcon;
   x: number;
   y: number;
 }
@@ -33,6 +41,10 @@ const [DX, DY] = [2, 2];
 const delayMS = 250;
 const pleaseAlloweRecord =
   '음성녹음을 허용해주세요! 다른유저와 채팅할 수 있습니다.';
+const bookCoord = {
+  x: 22,
+  y: 17,
+};
 
 class Main extends Component<{ u?: string }, MainState> {
   audioGridRef: RefObject<HTMLDivElement>;
@@ -76,6 +88,40 @@ class Main extends Component<{ u?: string }, MainState> {
     this.peer.destroy();
     document.body.removeEventListener('keydown', this.onKeyDown);
   }
+
+  boundChecker = () => {
+    const threshold = {
+      x: 12,
+      y: 12,
+    };
+
+    const characterOffset = {
+      x: 3,
+      y: 3,
+    };
+    const { y, x } = this.state;
+    const { y: bookY, x: bookX } = bookCoord;
+
+    if (
+      bookY - threshold.y < y - characterOffset.y &&
+      y - characterOffset.y < bookY + threshold.y &&
+      bookX - threshold.x < x - characterOffset.x &&
+      x - characterOffset.x < bookX + threshold.x
+    ) {
+      this.setState({ entered: 'book' }, () => {
+        alert('엔터 버튼을 눌러서 책으로 이동');
+      });
+    } else {
+      this.setState({ entered: undefined });
+    }
+  };
+
+  onMinimiMove = () => {
+    console.log(this.state.x, this.state.y);
+
+    this.boundChecker();
+    this.broadCastMove();
+  };
 
   setupConnections() {
     this.setupAudioStream();
@@ -135,19 +181,13 @@ class Main extends Component<{ u?: string }, MainState> {
       ...connections,
       [id]: connection,
     };
-    this.setState({ connections: nextConnections }, () => {
-      console.log('myId', this.myId);
-      console.log(this.state);
-    });
+    this.setState({ connections: nextConnections });
   };
 
   removeConnections = (id: string) => {
     const { connections } = this.state;
     delete connections[id];
-    this.setState({ connections }, () => {
-      console.log(`deleted id: ${id}`);
-      console.log(this.state.connections);
-    });
+    this.setState({ connections });
   };
 
   updateMinimi = (minimiMessage: MinimiUpdateMessage) => {
@@ -174,7 +214,6 @@ class Main extends Component<{ u?: string }, MainState> {
           call.on('stream', (otherUserStream) => {
             this.addAudioStream(newAudio, otherUserStream);
           });
-          console.log('peer ', call.peer);
         })
         .catch((_) => {
           alert(pleaseAlloweRecord, 3000);
@@ -239,16 +278,16 @@ class Main extends Component<{ u?: string }, MainState> {
 
     switch (event.code) {
       case 'ArrowUp':
-        this.setState({ y: Math.max(0, y - DY) }, this.broadCastMove);
+        this.setState({ y: Math.max(0, y - DY) }, this.onMinimiMove);
         break;
       case 'ArrowDown':
-        this.setState({ y: Math.min(90, y + DY) }, this.broadCastMove);
+        this.setState({ y: Math.min(90, y + DY) }, this.onMinimiMove);
         break;
       case 'ArrowLeft':
-        this.setState({ x: Math.max(0, x - DX) }, this.broadCastMove);
+        this.setState({ x: Math.max(0, x - DX) }, this.onMinimiMove);
         break;
       case 'ArrowRight':
-        this.setState({ x: Math.min(90, x + DX) }, this.broadCastMove);
+        this.setState({ x: Math.min(90, x + DX) }, this.onMinimiMove);
         break;
       default:
         break;
@@ -256,7 +295,7 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   render() {
-    const { minimi, y, x, users } = this.state;
+    const { minimi, y, x, users, entered } = this.state;
     return (
       <MainContainer>
         <div className="audio-gred" ref={this.audioGridRef} />
@@ -274,11 +313,11 @@ class Main extends Component<{ u?: string }, MainState> {
             coord={{ left: `${x}%`, top: `${y}%` }}
           />
         ))}
-        <House />
+        <House entered={entered} />
         <KK />
         <Tree />
         <Gift />
-        <Book />
+        <Book entered={entered} />
       </MainContainer>
     );
   }
