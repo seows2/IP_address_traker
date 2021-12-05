@@ -1,5 +1,8 @@
 import { io } from 'socket.io-client';
 
-const socket = io('https://localhost:5000');
+const createSocket = () => {
+  const socket = io('https://localhost:5000');
+  return socket;
+};
 
-export default socket;
+export default createSocket;

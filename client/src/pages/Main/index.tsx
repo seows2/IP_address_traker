@@ -5,11 +5,12 @@ import PixelArt, {
   genRandomPixelArt,
   Minimi,
 } from '../../components/main/Minimi';
-import socket from '../../lib/api/socket';
+import createSocket from '../../lib/api/socket';
 import { MainContainer } from './index.style';
 import { v4 as uuidv4 } from 'uuid';
 import createPeer from '../../lib/api/peer';
 import { alert } from '../../utils/modal';
+import { Socket } from 'socket.io-client';
 
 interface MainState {
   users: { id: string; x: number; y: number; minimi: Minimi }[];
@@ -38,6 +39,7 @@ class Main extends Component<{ u?: string }, MainState> {
   myStream?: MediaStream;
   peer: Peer;
   myId: string;
+  socket: Socket;
 
   constructor(props) {
     super(props);
@@ -52,10 +54,11 @@ class Main extends Component<{ u?: string }, MainState> {
       users: [],
     };
 
+    this.socket = createSocket();
     this.myId = uuidv4();
     this.peer = createPeer(this.myId);
     this.peer.on('open', (id) => {
-      socket.emit('join-room', id);
+      this.socket.emit('join-room', id);
     });
     this.audioGridRef = createRef<HTMLDivElement>();
     this.setupConnections = this.setupConnections.bind(this);
@@ -69,13 +72,15 @@ class Main extends Component<{ u?: string }, MainState> {
     this.myStream?.getTracks().forEach((mediaTrack) => {
       mediaTrack.stop();
     });
+    this.socket.disconnect();
+    this.peer.destroy();
     document.body.removeEventListener('keydown', this.onKeyDown);
   }
 
   setupConnections() {
     this.setupAudioStream();
 
-    socket.on('user-connected', async (userId: string) => {
+    this.socket.on('user-connected', async (userId: string) => {
       alert(`user-connected! ID: ${userId}`);
       const conn = this.peer.connect(userId);
 
@@ -109,7 +114,7 @@ class Main extends Component<{ u?: string }, MainState> {
       });
     });
 
-    socket.on('user-disconnected', (userId) => {
+    this.socket.on('user-disconnected', (userId) => {
       alert(`user-disconnected: ${userId}`);
       const { peerCalls } = this.state;
       peerCalls[userId]?.close();
@@ -176,7 +181,7 @@ class Main extends Component<{ u?: string }, MainState> {
         });
     });
 
-    socket.on('user-connected', (userId) => {
+    this.socket.on('user-connected', (userId) => {
       navigator.mediaDevices
         .getUserMedia({ audio: true })
         .then((myStream) => {
