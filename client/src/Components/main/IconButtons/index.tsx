@@ -72,14 +72,14 @@ const Book: FC<{ entered?: TypeCategoryIcon }> = ({ entered }) => {
     <Button category="book" entered={entered === 'book'} onClick={onClick} />
   );
 };
-const Gift: FC = () => {
-  return <Button category="gift" />;
+const Gift: FC<{ entered?: TypeCategoryIcon }> = ({ entered }) => {
+  return <Button category="gift" entered={entered === 'gift'} />;
 };
-const KK: FC = () => {
-  return <Button category="kk" />;
+const KK: FC<{ entered?: TypeCategoryIcon }> = ({ entered }) => {
+  return <Button category="kk" entered={entered === 'kk'} />;
 };
-const Tree: FC = () => {
-  return <Button category="tree" />;
+const Tree: FC<{ entered?: TypeCategoryIcon }> = ({ entered }) => {
+  return <Button category="tree" entered={entered === 'tree'} />;
 };
 
 export { House, Book, Gift, KK, Tree };

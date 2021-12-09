@@ -41,9 +41,28 @@ const [DX, DY] = [2, 2];
 const delayMS = 250;
 const pleaseAlloweRecord =
   '음성녹음을 허용해주세요! 다른유저와 채팅할 수 있습니다.';
-const bookCoord = {
-  x: 22,
-  y: 17,
+
+const categoryCoords = {
+  book: {
+    x: 20,
+    y: 17,
+  },
+  gift: {
+    x: -3,
+    y: 36,
+  },
+  tree: {
+    x: 39,
+    y: 73,
+  },
+  house: {
+    x: 67,
+    y: 43,
+  },
+  kk: {
+    x: 59,
+    y: 5,
+  },
 };
 
 class Main extends Component<{ u?: string }, MainState> {
@@ -92,24 +111,33 @@ class Main extends Component<{ u?: string }, MainState> {
   boundChecker = () => {
     const threshold = {
       x: 12,
-      y: 12,
+      y: 14,
     };
 
     const characterOffset = {
       x: 3,
       y: 3,
     };
-    const { y, x } = this.state;
-    const { y: bookY, x: bookX } = bookCoord;
 
-    if (
-      bookY - threshold.y < y - characterOffset.y &&
-      y - characterOffset.y < bookY + threshold.y &&
-      bookX - threshold.x < x - characterOffset.x &&
-      x - characterOffset.x < bookX + threshold.x
-    ) {
-      this.setState({ entered: 'book' }, () => {
-        alert('엔터 버튼을 눌러서 책으로 이동');
+    const { x, y } = this.state;
+
+    let enteredCategory: TypeCategoryIcon | undefined = undefined;
+
+    Object.entries(categoryCoords).forEach(
+      ([category, { x: categoryX, y: categoryY }]) => {
+        if (
+          categoryY - threshold.y < y - characterOffset.y &&
+          y - characterOffset.y < categoryY + threshold.y &&
+          categoryX - threshold.x < x - characterOffset.x &&
+          x - characterOffset.x < categoryX + threshold.x
+        ) {
+          enteredCategory = category as TypeCategoryIcon;
+        }
+      },
+    );
+    if (enteredCategory) {
+      this.setState({ entered: enteredCategory }, () => {
+        alert(`엔터 버튼을 눌러서 ${enteredCategory}로 이동해요`);
       });
     } else {
       this.setState({ entered: undefined });
@@ -117,8 +145,6 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   onMinimiMove = () => {
-    console.log(this.state.x, this.state.y);
-
     this.boundChecker();
     this.broadCastMove();
   };
@@ -314,9 +340,9 @@ class Main extends Component<{ u?: string }, MainState> {
           />
         ))}
         <House entered={entered} />
-        <KK />
-        <Tree />
-        <Gift />
+        <KK entered={entered} />
+        <Tree entered={entered} />
+        <Gift entered={entered} />
         <Book entered={entered} />
       </MainContainer>
     );
