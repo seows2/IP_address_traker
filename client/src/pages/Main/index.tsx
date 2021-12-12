@@ -21,7 +21,10 @@ import { Socket } from 'socket.io-client';
 
 interface MainState {
   users: { id: string; x: number; y: number; minimi: Minimi }[];
-  peerCalls: Record<string, MediaConnection>;
+  peerCalls: Record<
+    string,
+    { mediaConn: MediaConnection; isSendingVoice: boolean }
+  >;
   connections: Record<string, DataConnection>;
   minimi: Minimi;
   entered?: TypeCategoryIcon;
@@ -40,7 +43,7 @@ type MinimiUpdateMessage = {
 const [DX, DY] = [2, 2];
 const delayMS = 250;
 const pleaseAlloweRecord =
-  '음성녹음을 허용해주세요! 다른유저와 채팅할 수 있습니다.';
+  '다른사람은 내목소리를 못들어요. 마이크 권한을 켜주세요.';
 
 const categoryCoords = {
   book: {
@@ -189,7 +192,7 @@ class Main extends Component<{ u?: string }, MainState> {
     this.socket.on('user-disconnected', (userId) => {
       alert(`user-disconnected: ${userId}`);
       const { peerCalls } = this.state;
-      peerCalls[userId]?.close();
+      peerCalls[userId]?.mediaConn.close();
       delete peerCalls[userId];
       this.setState({
         peerCalls,
@@ -242,6 +245,22 @@ class Main extends Component<{ u?: string }, MainState> {
           });
         })
         .catch((_) => {
+          const { peerCalls } = this.state;
+          const nextPeers = {
+            ...peerCalls,
+            [call.peer]: {
+              mediaConn: call,
+              isSendingVoice: false,
+            },
+          };
+          this.setState({ peerCalls: nextPeers });
+
+          call.answer(undefined);
+          const newAudio = document.createElement('audio');
+          this.audioGridRef.current?.appendChild(newAudio);
+          call.on('stream', (otherUserSteram) => {
+            this.addAudioStream(newAudio, otherUserSteram);
+          });
           alert(pleaseAlloweRecord, 3000);
         });
     });
@@ -266,7 +285,10 @@ class Main extends Component<{ u?: string }, MainState> {
           const { peerCalls } = this.state;
           const nextPeers = {
             ...peerCalls,
-            [userId]: call,
+            [call.peer]: {
+              mediaConn: call,
+              isSendingVoice: true,
+            },
           };
           this.setState({ peerCalls: nextPeers });
         })
