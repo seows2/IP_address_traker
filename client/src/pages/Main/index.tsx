@@ -74,6 +74,7 @@ class Main extends Component<{ u?: string }, MainState> {
   peer: Peer;
   myId: string;
   socket: Socket;
+  state: Readonly<MainState>;
 
   constructor(props) {
     super(props);
@@ -255,6 +256,7 @@ class Main extends Component<{ u?: string }, MainState> {
           call.answer(myStream);
 
           const newAudio = document.createElement('audio');
+          newAudio.setAttribute('controls', '');
           this.audioGridRef.current?.appendChild(newAudio);
           call.on('stream', (otherUserStream) => {
             this.addAudioStream(newAudio, otherUserStream);
@@ -273,6 +275,7 @@ class Main extends Component<{ u?: string }, MainState> {
 
           call.answer(undefined);
           const newAudio = document.createElement('audio');
+          newAudio.setAttribute('controls', '');
           this.audioGridRef.current?.appendChild(newAudio);
           call.on('stream', (otherUserSteram) => {
             this.addAudioStream(newAudio, otherUserSteram);
