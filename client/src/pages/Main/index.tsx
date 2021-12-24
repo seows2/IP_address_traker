@@ -13,13 +13,12 @@ import PixelArt, {
   Minimi,
 } from '../../components/main/Minimi';
 import createSocket from '../../lib/api/socket';
-import { MainContainer } from './index.style';
+import { VideoGrid, MainContainer } from './index.style';
 import { v4 as uuidv4 } from 'uuid';
 import createPeer from '../../lib/api/peer';
 import { alert } from '../../utils/modal';
 import { Socket } from 'socket.io-client';
-import RTCAudio from './RTCAudio';
-import './audio-grid.css';
+import RTCVideo from './RTCVideo';
 
 interface MainState {
   users: { id: string; x: number; y: number; minimi: Minimi }[];
@@ -47,6 +46,12 @@ const [DX, DY] = [2, 2];
 const delayMS = 250;
 const pleaseAlloweRecord =
   '다른사람은 내목소리를 못들어요. 마이크 권한을 켜주세요.';
+const MEDIA_OPTIONS = {
+  audio: true,
+  video: {
+    width: { min: 100, ideal: 240 },
+  },
+};
 
 const categoryCoords = {
   book: {
@@ -101,7 +106,7 @@ class Main extends Component<{ u?: string }, MainState> {
 
     this.setupConnections = this.setupConnections.bind(this);
     this.addConnections = this.addConnections.bind(this);
-    this.addAudioStream = this.addAudioStream.bind(this);
+    this.addVideoStream = this.addVideoStream.bind(this);
     this.updateMinimi = this.updateMinimi.bind(this);
     this.setupConnections();
   }
@@ -157,7 +162,7 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   setupConnections() {
-    this.setupAudioStream();
+    this.setupVideoStream();
 
     this.socket.on('user-connected', async (userId: string) => {
       const conn = this.peer.connect(userId);
@@ -210,7 +215,7 @@ class Main extends Component<{ u?: string }, MainState> {
   }
 
   callTo = (peerId: string) => {
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((myVoice) => {
+    navigator.mediaDevices.getUserMedia(MEDIA_OPTIONS).then((myVoice) => {
       const call = this.peer.call(peerId, myVoice);
       const { peerCalls } = this.state;
       const nextPeers = {
@@ -247,21 +252,21 @@ class Main extends Component<{ u?: string }, MainState> {
     this.setState({ users: nextUsers });
   };
 
-  setupAudioStream = () => {
+  setupVideoStream = () => {
     /**
      * 누군가가 나할테 call을 했을 때.
      */
     this.peer.on('call', (call) => {
       navigator.mediaDevices
-        .getUserMedia({ audio: true })
+        .getUserMedia(MEDIA_OPTIONS)
         .then((myStream) => {
           this.myStream = myStream;
           call.answer(myStream);
           call.on('stream', (otherUserStream) => {
-            this.addAudioStream(otherUserStream, call.peer);
+            this.addVideoStream(otherUserStream, call.peer);
           });
           call.on('close', () => {
-            this.removeAudioStream(call.peer);
+            this.removeVideoStream(call.peer);
           });
         })
         .catch((_) => {
@@ -277,10 +282,10 @@ class Main extends Component<{ u?: string }, MainState> {
 
           call.answer(undefined);
           call.on('stream', (otherUserSteram) => {
-            this.addAudioStream(otherUserSteram, call.peer);
+            this.addVideoStream(otherUserSteram, call.peer);
           });
           call.on('close', () => {
-            this.removeAudioStream(call.peer);
+            this.removeVideoStream(call.peer);
           });
           alert(`${call.peer}의 음성을 듣기 시작합니다.`, 3000);
         });
@@ -288,16 +293,16 @@ class Main extends Component<{ u?: string }, MainState> {
 
     this.socket.on('user-connected', (userId) => {
       navigator.mediaDevices
-        .getUserMedia({ audio: true })
+        .getUserMedia(MEDIA_OPTIONS)
         .then((myStream) => {
           this.myStream = myStream;
           const call = this.peer.call(userId, myStream);
 
           call.on('stream', (otherUserStream) => {
-            this.addAudioStream(otherUserStream, call.peer);
+            this.addVideoStream(otherUserStream, call.peer);
           });
           call.on('close', () => {
-            this.removeAudioStream(call.peer);
+            this.removeVideoStream(call.peer);
           });
 
           const { peerCalls } = this.state;
@@ -319,10 +324,10 @@ class Main extends Component<{ u?: string }, MainState> {
     });
   };
 
-  addAudioStream = (stream: MediaStream, id: string) => {
+  addVideoStream = (stream: MediaStream, id: string) => {
     const { streams } = this.state;
     const nextStreams = [
-      ...streams,
+      ...streams.filter((streamInfo) => streamInfo.id !== id),
       {
         stream,
         id,
@@ -331,7 +336,7 @@ class Main extends Component<{ u?: string }, MainState> {
     this.setState({ streams: nextStreams });
   };
 
-  removeAudioStream = (id: string) => {
+  removeVideoStream = (id: string) => {
     const { streams } = this.state;
     const nextStreams = streams.filter((streamInfo) => streamInfo.id !== id);
     this.setState({ streams: nextStreams });
@@ -378,11 +383,11 @@ class Main extends Component<{ u?: string }, MainState> {
     const { minimi, y, x, users, entered, streams } = this.state;
     return (
       <MainContainer>
-        <div className="audio-grid">
+        <VideoGrid>
           {streams.map(({ id, stream }) => (
-            <RTCAudio key={id} id={id} stream={stream} />
+            <RTCVideo key={id} id={id} stream={stream} />
           ))}
-        </div>
+        </VideoGrid>
         <PixelArt className="cat" />
         <PixelArt className="chicken" coord={{ left: '35%', top: '20%' }} />
         <PixelArt className="sonic" coord={{ left: '15%', top: '30%' }} />

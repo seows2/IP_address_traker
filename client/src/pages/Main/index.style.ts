@@ -6,4 +6,23 @@ const MainContainer = styled.div`
   height: 815px;
 `;
 
-export { MainContainer };
+const VideoGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: fixed;
+  right: 0px;
+  bottom: 0px;
+  width: 220px;
+  height: 90vh;
+  gap: 1rem;
+  overflow-y: auto;
+`;
+
+const Video = styled.video`
+  display: block;
+  border-radius: 10px;
+  width: 200px;
+`;
+
+export { MainContainer, VideoGrid, Video };
