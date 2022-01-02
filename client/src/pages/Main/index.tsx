@@ -13,7 +13,7 @@ import PixelArt, {
   Minimi,
 } from '../../components/main/Minimi';
 import createSocket from '../../lib/api/socket';
-import { VideoGrid, MainContainer } from './index.style';
+import { VideoGrid, MainContainer, MyVideoWrapper } from './index.style';
 import { v4 as uuidv4 } from 'uuid';
 import createPeer from '../../lib/api/peer';
 import { alert } from '../../utils/modal';
@@ -43,7 +43,7 @@ type MinimiUpdateMessage = {
 };
 
 const [DX, DY] = [2, 2];
-const delayMS = 250;
+const delayMS = 400;
 const pleaseAlloweRecord =
   '다른사람은 내목소리를 못들어요. 마이크 권한을 켜주세요.';
 const MEDIA_OPTIONS = {
@@ -100,14 +100,11 @@ class Main extends Component<{ u?: string }, MainState> {
     this.socket = createSocket();
     this.myId = uuidv4();
     this.peer = createPeer(this.myId);
+
     this.peer.on('open', (id) => {
       this.socket.emit('join-room', id);
     });
 
-    this.setupConnections = this.setupConnections.bind(this);
-    this.addConnections = this.addConnections.bind(this);
-    this.addVideoStream = this.addVideoStream.bind(this);
-    this.updateMinimi = this.updateMinimi.bind(this);
     this.setupConnections();
   }
 
@@ -165,6 +162,8 @@ class Main extends Component<{ u?: string }, MainState> {
     this.setupVideoStream();
 
     this.socket.on('user-connected', async (userId: string) => {
+      console.log(this.myId, userId);
+
       const conn = this.peer.connect(userId);
 
       setTimeout(() => {
@@ -209,6 +208,7 @@ class Main extends Component<{ u?: string }, MainState> {
         users: this.state.users.filter((user) => user.id !== userId),
       });
       this.removeConnections(userId);
+      this.removeVideoStream(userId);
     });
 
     document.body.addEventListener('keydown', this.onKeyDown);
@@ -253,9 +253,6 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   setupVideoStream = () => {
-    /**
-     * 누군가가 나할테 call을 했을 때.
-     */
     this.peer.on('call', (call) => {
       navigator.mediaDevices
         .getUserMedia(MEDIA_OPTIONS)
@@ -264,9 +261,6 @@ class Main extends Component<{ u?: string }, MainState> {
           call.answer(myStream);
           call.on('stream', (otherUserStream) => {
             this.addVideoStream(otherUserStream, call.peer);
-          });
-          call.on('close', () => {
-            this.removeVideoStream(call.peer);
           });
         })
         .catch((_) => {
@@ -284,14 +278,11 @@ class Main extends Component<{ u?: string }, MainState> {
           call.on('stream', (otherUserSteram) => {
             this.addVideoStream(otherUserSteram, call.peer);
           });
-          call.on('close', () => {
-            this.removeVideoStream(call.peer);
-          });
           alert(`${call.peer}의 음성을 듣기 시작합니다.`, 3000);
         });
     });
 
-    this.socket.on('user-connected', (userId) => {
+    this.socket.on('user-connected', async (userId) => {
       navigator.mediaDevices
         .getUserMedia(MEDIA_OPTIONS)
         .then((myStream) => {
@@ -300,9 +291,6 @@ class Main extends Component<{ u?: string }, MainState> {
 
           call.on('stream', (otherUserStream) => {
             this.addVideoStream(otherUserStream, call.peer);
-          });
-          call.on('close', () => {
-            this.removeVideoStream(call.peer);
           });
 
           const { peerCalls } = this.state;
@@ -326,6 +314,7 @@ class Main extends Component<{ u?: string }, MainState> {
 
   addVideoStream = (stream: MediaStream, id: string) => {
     const { streams } = this.state;
+
     const nextStreams = [
       ...streams.filter((streamInfo) => streamInfo.id !== id),
       {
@@ -380,7 +369,7 @@ class Main extends Component<{ u?: string }, MainState> {
   };
 
   render() {
-    const { minimi, y, x, users, entered, streams } = this.state;
+    const { minimi, y, x, users, entered, streams, connections } = this.state;
     return (
       <MainContainer>
         <VideoGrid>
@@ -388,6 +377,12 @@ class Main extends Component<{ u?: string }, MainState> {
             <RTCVideo key={id} id={id} stream={stream} />
           ))}
         </VideoGrid>
+        <MyVideoWrapper>
+          <div>{Object.keys(connections).length} 명 접속중</div>
+          {this.myStream && (
+            <RTCVideo id={this.myId} stream={this.myStream} muted />
+          )}
+        </MyVideoWrapper>
         <PixelArt className="cat" />
         <PixelArt className="chicken" coord={{ left: '35%', top: '20%' }} />
         <PixelArt className="sonic" coord={{ left: '15%', top: '30%' }} />

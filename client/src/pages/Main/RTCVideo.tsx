@@ -1,7 +1,11 @@
 import { FC, memo, useEffect, useRef } from 'react';
 import { Video } from './index.style';
 
-const RTCVideo: FC<{ id: string; stream: MediaStream }> = ({ id, stream }) => {
+const RTCVideo: FC<{ id: string; stream: MediaStream; muted?: boolean }> = ({
+  id,
+  stream,
+  muted = false,
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -12,7 +16,7 @@ const RTCVideo: FC<{ id: string; stream: MediaStream }> = ({ id, stream }) => {
   return (
     <figure>
       <figcaption>{id.slice(0, 8)}</figcaption>
-      <Video ref={videoRef} autoPlay controls />
+      <Video ref={videoRef} autoPlay controls muted={muted} />
     </figure>
   );
 };

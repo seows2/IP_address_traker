@@ -25,4 +25,11 @@ const Video = styled.video`
   width: 200px;
 `;
 
-export { MainContainer, VideoGrid, Video };
+const MyVideoWrapper = styled.div`
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 220px;
+`;
+
+export { MainContainer, VideoGrid, Video, MyVideoWrapper };

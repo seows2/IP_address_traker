@@ -5,6 +5,7 @@ const createPeer = (uuid?: string) => {
     host: '192.168.0.5',
     path: '/p2p',
     port: 5001,
+    secure: true,
   });
 
   return peer;
