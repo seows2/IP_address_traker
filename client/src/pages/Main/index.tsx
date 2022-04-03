@@ -81,7 +81,15 @@ class Main extends Component<{ u?: string }, MainState> {
   peer: Peer;
   myId: string;
   socket: Socket;
-  state: Readonly<MainState>;
+  state: Readonly<MainState> = {
+    peerCalls: {},
+    connections: {},
+    minimi: 'cat',
+    x: 5,
+    y: 5,
+    users: [],
+    streams: [],
+  };
 
   constructor(props) {
     super(props);
@@ -162,8 +170,6 @@ class Main extends Component<{ u?: string }, MainState> {
     this.setupVideoStream();
 
     this.socket.on('user-connected', async (userId: string) => {
-      console.log(this.myId, userId);
-
       const conn = this.peer.connect(userId);
 
       setTimeout(() => {
@@ -350,7 +356,7 @@ class Main extends Component<{ u?: string }, MainState> {
   onKeyDown = (event: globalThis.KeyboardEvent) => {
     const { y, x } = this.state;
 
-    switch (event.code) {
+    switch (event.key) {
       case 'ArrowUp':
         this.setState({ y: Math.max(0, y - DY) }, this.onMinimiMove);
         break;
@@ -370,6 +376,8 @@ class Main extends Component<{ u?: string }, MainState> {
 
   render() {
     const { minimi, y, x, users, entered, streams, connections } = this.state;
+    console.log(connections);
+
     return (
       <MainContainer>
         <VideoGrid>
@@ -386,13 +394,18 @@ class Main extends Component<{ u?: string }, MainState> {
         <PixelArt className="cat" />
         <PixelArt className="chicken" coord={{ left: '35%', top: '20%' }} />
         <PixelArt className="sonic" coord={{ left: '15%', top: '30%' }} />
-        <PixelArt className={minimi} coord={{ left: `${x}%`, top: `${y}%` }} />
+        <PixelArt
+          className={minimi}
+          id={this.myId}
+          coord={{ left: `${x}%`, top: `${y}%` }}
+        />
         <PixelArt className="hedgehog" coord={{ right: '10%' }} />
         <PixelArt className="flower" coord={{ bottom: '20%' }} />
         <PixelArt className="ladybug" coord={{ bottom: '20%', right: '40%' }} />
         {users.map(({ id, y, x, minimi }) => (
           <PixelArt
             key={id}
+            id={id}
             className={minimi}
             coord={{ left: `${x}%`, top: `${y}%` }}
           />
